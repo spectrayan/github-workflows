@@ -1,5 +1,5 @@
 name: "Maven Setup"
-description: "Prepare Maven settings and local repository cache"
+description: "Prepare Maven settings, optionally inject credentials, and show Maven version"
 author: "github-workflows"
 
 inputs:
@@ -7,14 +7,22 @@ inputs:
     description: "Path to a settings.xml template in the repository to copy into ~/.m2/settings.xml"
     required: false
     default: ".mvn/settings.xml"
-  cache-enabled:
-    description: "Enable dependency cache (handled via setup-java cache=maven)"
-    required: false
-    default: "true"
   working-directory:
     description: "Working directory for Maven commands"
     required: false
     default: "."
+  server-id:
+    description: "Maven <server><id> to configure for credentials (used if injecting or generating settings)"
+    required: false
+    default: "central"
+  server-username:
+    description: "Username to inject into Maven settings (optional)"
+    required: false
+    default: ""
+  server-password:
+    description: "Password to inject into Maven settings (optional)"
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -23,14 +31,50 @@ runs:
       shell: bash
       run: mkdir -p "$HOME/.m2"
 
-    - name: Copy settings.xml
+    - name: Copy settings.xml template (if present)
       if: ${{ inputs.settings-file != '' }}
       shell: bash
       run: |
         if [ -f "${{ inputs.settings-file }}" ]; then
           cp "${{ inputs.settings-file }}" "$HOME/.m2/settings.xml"
         else
-          echo "No settings.xml found at ${{ inputs.settings-file }}; skipping copy"
+          echo "No settings.xml found at ${{ inputs.settings-file }}; continuing without template"
+        fi
+
+    - name: Inject Maven server credentials (if provided)
+      if: ${{ inputs.server-username != '' && inputs.server-password != '' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        echo "::add-mask::${{ inputs.server-username }}"
+        echo "::add-mask::${{ inputs.server-password }}"
+        SETTINGS="$HOME/.m2/settings.xml"
+        SID="${{ inputs.server-id }}"
+
+        # If no settings.xml exists, create a minimal one with the server configured (with placeholders replaced)
+        if [ ! -f "$SETTINGS" ]; then
+          printf '%s\n' \
+            '<?xml version="1.0" encoding="UTF-8"?>' \
+            '<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">' \
+            '  <servers>' \
+            '    <server>' \
+            "      <id>${SID}</id>" \
+            "      <username>${{ inputs.server-username }}</username>" \
+            "      <password>${{ inputs.server-password }}</password>" \
+            '    </server>' \
+            '  </servers>' \
+            '</settings>' \
+            > "$SETTINGS"
+          echo "Created minimal settings.xml with server '${SID}'."
+        else
+          # Replace placeholders if present; otherwise leave file unchanged
+          if grep -q "__SERVER_USERNAME__" "$SETTINGS" || grep -q "__SERVER_PASSWORD__" "$SETTINGS"; then
+            sed -i "s|__SERVER_USERNAME__|${{ inputs.server-username }}|g" "$SETTINGS"
+            sed -i "s|__SERVER_PASSWORD__|${{ inputs.server-password }}|g" "$SETTINGS"
+            echo "Replaced credential placeholders in existing settings.xml."
+          else
+            echo "No placeholders found in settings.xml; skipping injection to avoid unintended changes."
+          fi
         fi
 
     - name: Show Maven version

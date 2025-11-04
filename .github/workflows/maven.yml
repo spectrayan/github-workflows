@@ -50,25 +50,13 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
 
-      - name: Write server auth into settings.xml (if provided)
-        if: ${{ secrets.MAVEN_SERVER_USERNAME != '' && secrets.MAVEN_SERVER_PASSWORD != '' }}
-        shell: bash
-        run: |
-          mkdir -p "$HOME/.m2"
-          if [ -f "${{ inputs.settings-file }}" ]; then
-            cp "${{ inputs.settings-file }}" "$HOME/.m2/settings.xml"
-          fi
-          # Inject credentials if placeholders present
-          if [ -f "$HOME/.m2/settings.xml" ]; then
-            sed -i "s|__SERVER_USERNAME__|${{ secrets.MAVEN_SERVER_USERNAME }}|g" "$HOME/.m2/settings.xml"
-            sed -i "s|__SERVER_PASSWORD__|${{ secrets.MAVEN_SERVER_PASSWORD }}|g" "$HOME/.m2/settings.xml"
-          fi
-
       - name: Maven Setup
         uses: ./.github/actions/maven-setup
         with:
           settings-file: ${{ inputs.settings-file }}
           working-directory: ${{ inputs.working-directory }}
+          server-username: ${{ secrets.MAVEN_SERVER_USERNAME }}
+          server-password: ${{ secrets.MAVEN_SERVER_PASSWORD }}
 
       - name: Build
         uses: ./.github/actions/maven-build
