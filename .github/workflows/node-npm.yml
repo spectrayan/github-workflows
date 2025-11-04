@@ -1,0 +1,98 @@
+name: Reusable Node (npm) CI
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node.js version
+        required: false
+        type: string
+      npm-version:
+        description: npm version
+        required: false
+        type: string
+      working-directory:
+        description: Directory with package.json
+        required: false
+        type: string
+        default: "."
+      install-ci:
+        description: Use npm ci (true) or npm install (false)
+        required: false
+        type: boolean
+        default: true
+      build-script:
+        description: Name of build script to run
+        required: false
+        type: string
+        default: "build"
+      test-script:
+        description: Name of test script to run
+        required: false
+        type: string
+        default: "test"
+      test-args:
+        description: Additional args to pass to test script
+        required: false
+        type: string
+        default: ""
+      registry-url:
+        description: Optional npm registry URL
+        required: false
+        type: string
+        default: ""
+    secrets:
+      NPM_TOKEN:
+        required: false
+
+env:
+  NODE_VERSION: ${{ inputs.node-version || '20' }}
+  NPM_VERSION: ${{ inputs.npm-version || '' }}
+
+jobs:
+  node:
+    name: Node (npm) Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure npm auth (if token provided)
+        if: ${{ inputs.registry-url != '' && secrets.NPM_TOKEN != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          REG="${{ inputs.registry-url }}"
+          HOST=$(echo "$REG" | sed -E 's#^https?://##')
+          # Ensure trailing slash
+          case "$HOST" in
+            */) ;;
+            *) HOST="$HOST/" ;;
+          esac
+          npm config set //${HOST}:_authToken="${{ secrets.NPM_TOKEN }}"
+
+      - name: Setup Node
+        uses: ./.github/actions/node-setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          npm-version: ${{ env.NPM_VERSION }}
+          registry-url: ${{ inputs.registry-url }}
+
+      - name: Install
+        uses: ./.github/actions/npm-install
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          ci: ${{ inputs.install-ci }}
+
+      - name: Build
+        uses: ./.github/actions/node-build
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          script: ${{ inputs.build-script }}
+
+      - name: Test
+        uses: ./.github/actions/node-test
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          script: ${{ inputs.test-script }}
+          args: ${{ inputs.test-args }}
