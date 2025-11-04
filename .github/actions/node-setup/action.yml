@@ -1,0 +1,45 @@
+name: "Node Setup"
+description: "Set up Node.js with optional npm version and caching"
+author: "github-workflows"
+
+inputs:
+  node-version:
+    description: "Node.js version to use (e.g., 20)"
+    required: false
+    default: "${{ env.NODE_VERSION }}"
+  npm-version:
+    description: "NPM version to use (optional)"
+    required: false
+    default: "${{ env.NPM_VERSION }}"
+  cache:
+    description: "Enable npm cache"
+    required: false
+    default: "true"
+  registry-url:
+    description: "Optional registry URL for npm auth"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node ${{ inputs.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+        registry-url: ${{ inputs.registry-url }}
+        check-latest: true
+
+    - name: Install specific npm version
+      if: ${{ inputs.npm-version != '' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        npm i -g npm@"${{ inputs.npm-version }}"
+
+    - name: Show Node and npm versions
+      shell: bash
+      run: |
+        node -v
+        npm -v

@@ -1,0 +1,23 @@
+name: "Node Build"
+description: "Run Node build script using npm"
+author: "github-workflows"
+
+inputs:
+  script:
+    description: "NPM script to run for build"
+    required: false
+    default: "build"
+  working-directory:
+    description: "Directory containing package.json"
+    required: false
+    default: "."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Build (npm run ${{ inputs.script }})
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+        npm run ${{ inputs.script }}

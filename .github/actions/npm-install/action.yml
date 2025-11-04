@@ -1,0 +1,27 @@
+name: "NPM Install"
+description: "Install Node.js dependencies using npm ci"
+author: "github-workflows"
+
+inputs:
+  working-directory:
+    description: "Directory containing package.json"
+    required: false
+    default: "."
+  ci:
+    description: "Use npm ci (true) or npm install (false)"
+    required: false
+    default: "true"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install dependencies (npm)
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+        if [ "${{ inputs.ci }}" = "true" ]; then
+          npm ci
+        else
+          npm install
+        fi
