@@ -1,0 +1,28 @@
+name: "Maven Build"
+description: "Run Maven goals with common defaults"
+author: "github-workflows"
+
+inputs:
+  goals:
+    description: "Maven goals to run"
+    required: false
+    default: "-B -U clean verify"
+  working-directory:
+    description: "Working directory for Maven commands"
+    required: false
+    default: "."
+  additional-args:
+    description: "Additional args appended to Maven command"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Maven build
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+        echo "[maven] running: mvn ${{ inputs.goals }} ${{ inputs.additional-args }}"
+        mvn ${{ inputs.goals }} ${{ inputs.additional-args }}

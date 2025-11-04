@@ -1,0 +1,39 @@
+name: "Maven Setup"
+description: "Prepare Maven settings and local repository cache"
+author: "github-workflows"
+
+inputs:
+  settings-file:
+    description: "Path to a settings.xml template in the repository to copy into ~/.m2/settings.xml"
+    required: false
+    default: ".mvn/settings.xml"
+  cache-enabled:
+    description: "Enable dependency cache (handled via setup-java cache=maven)"
+    required: false
+    default: "true"
+  working-directory:
+    description: "Working directory for Maven commands"
+    required: false
+    default: "."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Ensure .m2 directory
+      shell: bash
+      run: mkdir -p "$HOME/.m2"
+
+    - name: Copy settings.xml
+      if: ${{ inputs.settings-file != '' }}
+      shell: bash
+      run: |
+        if [ -f "${{ inputs.settings-file }}" ]; then
+          cp "${{ inputs.settings-file }}" "$HOME/.m2/settings.xml"
+        else
+          echo "No settings.xml found at ${{ inputs.settings-file }}; skipping copy"
+        fi
+
+    - name: Show Maven version
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: mvn -version
