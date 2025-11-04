@@ -1,0 +1,39 @@
+name: "pnpm Setup"
+description: "Set up Node.js and pnpm with caching"
+author: "github-workflows"
+
+inputs:
+  node-version:
+    description: "Node.js version to use (e.g., 20)"
+    required: false
+    default: "${{ env.NODE_VERSION }}"
+  pnpm-version:
+    description: "pnpm version to use (e.g., 9)"
+    required: false
+    default: "${{ env.PNPM_VERSION }}"
+  registry-url:
+    description: "Optional registry URL for npm auth"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node ${{ inputs.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+        registry-url: ${{ inputs.registry-url }}
+        check-latest: true
+
+    - name: Setup pnpm ${{ inputs.pnpm-version }}
+      uses: pnpm/action-setup@v4
+      with:
+        version: ${{ inputs.pnpm-version }}
+
+    - name: Show Node and pnpm versions
+      shell: bash
+      run: |
+        node -v
+        pnpm -v
