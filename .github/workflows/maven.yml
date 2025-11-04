@@ -1,0 +1,77 @@
+name: Reusable Maven CI
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        description: Java version to use
+        required: false
+        type: string
+      distribution:
+        description: JDK distribution
+        required: false
+        type: string
+      goals:
+        description: Maven goals to run
+        required: false
+        type: string
+        default: "-B -U clean verify"
+      working-directory:
+        description: Directory with pom.xml
+        required: false
+        type: string
+        default: "."
+      settings-file:
+        description: Path to settings.xml template in the repo
+        required: false
+        type: string
+        default: ".mvn/settings.xml"
+    secrets:
+      MAVEN_SERVER_USERNAME:
+        required: false
+      MAVEN_SERVER_PASSWORD:
+        required: false
+
+env:
+  JAVA_VERSION: ${{ inputs.java-version || '21' }}
+  JAVA_DISTRIBUTION: ${{ inputs.distribution || 'temurin' }}
+
+jobs:
+  maven:
+    name: Maven Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: ./.github/actions/java-setup
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+      - name: Write server auth into settings.xml (if provided)
+        if: ${{ secrets.MAVEN_SERVER_USERNAME != '' && secrets.MAVEN_SERVER_PASSWORD != '' }}
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.m2"
+          if [ -f "${{ inputs.settings-file }}" ]; then
+            cp "${{ inputs.settings-file }}" "$HOME/.m2/settings.xml"
+          fi
+          # Inject credentials if placeholders present
+          if [ -f "$HOME/.m2/settings.xml" ]; then
+            sed -i "s|__SERVER_USERNAME__|${{ secrets.MAVEN_SERVER_USERNAME }}|g" "$HOME/.m2/settings.xml"
+            sed -i "s|__SERVER_PASSWORD__|${{ secrets.MAVEN_SERVER_PASSWORD }}|g" "$HOME/.m2/settings.xml"
+          fi
+
+      - name: Maven Setup
+        uses: ./.github/actions/maven-setup
+        with:
+          settings-file: ${{ inputs.settings-file }}
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: Build
+        uses: ./.github/actions/maven-build
+        with:
+          goals: ${{ inputs.goals }}
+          working-directory: ${{ inputs.working-directory }}
