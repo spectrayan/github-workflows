@@ -6,11 +6,11 @@ inputs:
   node-version:
     description: "Node.js version to use (e.g., 20)"
     required: false
-    default: "${{ env.NODE_VERSION }}"
+    default: "22"
   npm-version:
     description: "NPM version to use (optional)"
     required: false
-    default: "${{ env.NPM_VERSION }}"
+    default: ""
   cache:
     description: "Enable npm cache"
     required: false
