@@ -1,0 +1,49 @@
+name: "GPG Import"
+description: "Securely import a GPG private key into the keyring without exposing it in logs"
+author: "github-workflows"
+
+inputs:
+  gpg-private-key:
+    description: "ASCII-armored GPG private key to import (usually pass via secrets). If not set, falls back to env.GPG_PRIVATE_KEY"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Import GPG private key
+      shell: bash
+      env:
+        INPUT_KEY: ${{ inputs.gpg-private-key }}
+        ENV_KEY: ${{ env.GPG_PRIVATE_KEY }}
+      run: |
+        set -euo pipefail
+
+        # Prefer explicit input over env, but support either
+        GPG_PRIVATE_KEY_VALUE="${INPUT_KEY:-}"
+        if [ -z "$GPG_PRIVATE_KEY_VALUE" ]; then
+          GPG_PRIVATE_KEY_VALUE="${ENV_KEY:-}"
+        fi
+
+        if [ -z "$GPG_PRIVATE_KEY_VALUE" ]; then
+          echo "No GPG private key provided via input 'gpg-private-key' or env.GPG_PRIVATE_KEY"
+          exit 1
+        fi
+
+        # Mask the key in logs to prevent accidental exposure
+        echo "::add-mask::${GPG_PRIVATE_KEY_VALUE}"
+
+        # Import without printing the key material
+        # Use a here-string to avoid echoing the key
+        gpg --batch --import <<< "$GPG_PRIVATE_KEY_VALUE"
+
+        # Unset the variable ASAP to reduce in-memory exposure
+        unset GPG_PRIVATE_KEY_VALUE
+
+    - name: Show available secret keys (IDs only)
+      shell: bash
+      run: |
+        set -euo pipefail
+        echo "Available GPG secret keys (key IDs; no private material):"
+        # List secret keys with long key IDs; do not print private key contents
+        gpg --batch --list-secret-keys --keyid-format=long
