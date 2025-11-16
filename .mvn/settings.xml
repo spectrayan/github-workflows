@@ -19,6 +19,12 @@
       <properties>
         <!-- Speed up snapshot updates in CI -->
         <maven.wagon.http.pool>false</maven.wagon.http.pool>
+          <altSnapshotDeploymentRepository>
+              snapshots-repo::default::https://central.sonatype.com/repository/maven-snapshots/
+          </altSnapshotDeploymentRepository>
+          <altDeploymentRepository>
+              releases-repo::default::https://central.sonatype.com/repository/maven-releases/
+          </altDeploymentRepository>
       </properties>
       <repositories>
         <repository>
