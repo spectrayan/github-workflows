@@ -11,6 +11,13 @@
       <username>__SERVER_USERNAME__</username>
       <password>__SERVER_PASSWORD__</password>
     </server>
+    <!-- GitHub Packages server: uses GitHub Actions default env vars -->
+    <server>
+      <id>github</id>
+      <!-- In GitHub Actions, these env vars are available by default -->
+      <username>${env.GITHUB_ACTOR}</username>
+      <password>${env.GITHUB_TOKEN}</password>
+    </server>
   </servers>
 
   <profiles>
@@ -19,12 +26,15 @@
       <properties>
         <!-- Speed up snapshot updates in CI -->
         <maven.wagon.http.pool>false</maven.wagon.http.pool>
-          <altSnapshotDeploymentRepository>
-              snapshots-repo::default::https://central.sonatype.com/repository/maven-snapshots/
-          </altSnapshotDeploymentRepository>
-          <altDeploymentRepository>
-              releases-repo::default::https://central.sonatype.com/repository/maven-releases/
-          </altDeploymentRepository>
+          <mavenAltSnapshotDeploymentRepository>
+              maven-snapshots-repo::default::https://central.sonatype.com/repository/maven-snapshots/
+          </mavenAltSnapshotDeploymentRepository>
+          <mavenAltDeploymentRepository>
+              maven-releases-repo::default::https://central.sonatype.com/repository/maven-releases/
+          </mavenAltDeploymentRepository>
+          <spectrayanDeploymentRepository>
+              spectrayan-repo::default::https://maven.pkg.github.com/spectrayan/spectrayan/
+          </spectrayanDeploymentRepository>
       </properties>
       <repositories>
         <repository>
@@ -35,6 +45,19 @@
           </releases>
           <snapshots>
             <enabled>false</enabled>
+          </snapshots>
+        </repository>
+        <!-- GitHub Packages: resolves from the current repository's package registry -->
+        <repository>
+          <id>github</id>
+          <name>GitHub Packages</name>
+          <!-- Uses GitHub Actions env var GITHUB_REPOSITORY = owner/repo -->
+          <url>https://maven.pkg.github.com/spectrayan/spectrayan</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
           </snapshots>
         </repository>
           <repository>
@@ -58,6 +81,18 @@
           </releases>
           <snapshots>
             <enabled>false</enabled>
+          </snapshots>
+        </pluginRepository>
+        <!-- Allow plugins to also be resolved from GitHub Packages when needed -->
+        <pluginRepository>
+          <id>github</id>
+          <name>GitHub Packages</name>
+          <url>https://maven.pkg.github.com/spectrayan/spectrayan</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
           </snapshots>
         </pluginRepository>
       </pluginRepositories>
