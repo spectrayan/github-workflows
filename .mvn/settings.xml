@@ -27,13 +27,13 @@
         <!-- Speed up snapshot updates in CI -->
         <maven.wagon.http.pool>false</maven.wagon.http.pool>
           <mavenAltSnapshotDeploymentRepository>
-              maven-snapshots-repo::default::https://central.sonatype.com/repository/maven-snapshots/
+              maven-snapshots-repo::https://central.sonatype.com/repository/maven-snapshots/
           </mavenAltSnapshotDeploymentRepository>
           <mavenAltDeploymentRepository>
-              maven-releases-repo::default::https://central.sonatype.com/repository/maven-releases/
+              maven-releases-repo::https://central.sonatype.com/repository/maven-releases/
           </mavenAltDeploymentRepository>
           <spectrayanDeploymentRepository>
-              spectrayan-repo::default::https://maven.pkg.github.com/spectrayan/spectrayan/
+              spectrayan-repo::https://maven.pkg.github.com/spectrayan/spectrayan/
           </spectrayanDeploymentRepository>
       </properties>
       <repositories>
