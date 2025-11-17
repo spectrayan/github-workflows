@@ -31,14 +31,34 @@ runs:
       shell: bash
       run: mkdir -p "$HOME/.m2"
 
-    - name: Copy settings.xml template (if present)
+    - name: Copy settings.xml template with fallbacks
       if: ${{ inputs.settings-file != '' }}
       shell: bash
       run: |
-        if [ -f "${{ inputs.settings-file }}" ]; then
-          cp "${{ inputs.settings-file }}" "$HOME/.m2/settings.xml"
+        set -euo pipefail
+        USER_PATH="${{ inputs.settings-file }}"
+        ACTION_DIR="${GITHUB_ACTION_PATH}"
+        # Repo root where this action lives: repo/.github/actions/maven-setup → repo root is three levels up
+        ACTION_REPO_ROOT="$(cd "$ACTION_DIR/../../../" && pwd)"
+        FALLBACK_REPO_SETTINGS="$ACTION_REPO_ROOT/.mvn/settings.xml"
+        FALLBACK_ACTION_TEMPLATE="$ACTION_DIR/templates/settings.xml"
+
+        echo "Looking for Maven settings template..."
+        echo "- Requested path: $USER_PATH"
+        echo "- Fallback (repo .mvn): $FALLBACK_REPO_SETTINGS"
+        echo "- Fallback (action template): $FALLBACK_ACTION_TEMPLATE"
+
+        if [ -f "$USER_PATH" ]; then
+          echo "Using settings from: $USER_PATH"
+          cp "$USER_PATH" "$HOME/.m2/settings.xml"
+        elif [ -f "$FALLBACK_REPO_SETTINGS" ]; then
+          echo "Requested file not found. Using centralized settings from: $FALLBACK_REPO_SETTINGS"
+          cp "$FALLBACK_REPO_SETTINGS" "$HOME/.m2/settings.xml"
+        elif [ -f "$FALLBACK_ACTION_TEMPLATE" ]; then
+          echo "Requested file not found. Using action template from: $FALLBACK_ACTION_TEMPLATE"
+          cp "$FALLBACK_ACTION_TEMPLATE" "$HOME/.m2/settings.xml"
         else
-          echo "No settings.xml found at ${{ inputs.settings-file }}; continuing without template"
+          echo "No settings.xml found at '$USER_PATH' and no fallbacks available; continuing without template"
         fi
 
     - name: Inject Maven server credentials (if provided)
