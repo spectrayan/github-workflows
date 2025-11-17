@@ -5,12 +5,17 @@
   <!-- Global mirrors and repositories can be configured here. -->
 
   <servers>
-    <!-- Example private repository server with placeholders. The reusable workflow can inject secrets here. -->
+    <!-- Maven central repository server with placeholders. The reusable workflow can inject secrets here. -->
     <server>
       <id>central</id>
       <username>__SERVER_USERNAME__</username>
       <password>__SERVER_PASSWORD__</password>
     </server>
+      <server>
+          <id>maven-snapshots-repo</id>
+          <username>__SERVER_USERNAME__</username>
+          <password>__SERVER_PASSWORD__</password>
+      </server>
     <!-- GitHub Packages server: uses GitHub Actions default env vars -->
     <server>
       <id>github</id>
