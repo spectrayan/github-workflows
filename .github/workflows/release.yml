@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run release-please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          release-type: simple
+
+      - name: Checkout (for major tag update)
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Update rolling major tag
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        env:
+          TAG: ${{ steps.release.outputs.tag_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "[release] new tag: ${TAG}"
+          MAJOR="${TAG%%.*}"
+          echo "[release] updating rolling major tag: ${MAJOR} -> ${TAG}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f "${MAJOR}" "${TAG}"
+          git push origin "${MAJOR}" --force
