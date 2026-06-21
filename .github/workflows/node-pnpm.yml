@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Configure npm auth (if token provided)
         if: ${{ inputs.registry-url != '' && secrets.NPM_TOKEN != '' }}
